@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOIN</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.href = 'logo.svg'; 
+  document.getElementsByTagName('head')[0].appendChild(link);
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+
+<style>
+  @font-face { font-family: 'Phantom Sans'; src: url('https://assets.hackclub.com/fonts/Phantom_Sans_0.7/Regular.woff') format('woff'); }
+  
+
+
+#loader-wrapper {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #020617; 
+    z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader-logo {
+    width: 80px; 
+    height: 80px;
+    border-radius: 50%; 
+    object-fit: cover;
+    z-index: 10001;
+    border: 2px solid rgba(254, 224, 71, 0.2);
+}
+
+.frame {
+    width: min(75vmin, 380px);
+    aspect-ratio: 1;
+    margin-top: -10px;
+}
+
+#loader-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.loader-text {
+    color: #FDE047;
+    font-family: monospace;
+    font-size: 10px;
+    letter-spacing: 5px;
+    margin-top: -15px;
+    opacity: 0.7;
+}
+
+.loader-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+
+
+  :root { --primary: #2d7ff9; --white: #ffffff; }
+  #canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: auto;
+}
+
+#three-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1; 
+  pointer-events: none;
+}
+
+  body {
+    font-family: 'Phantom Sans', sans-serif;
+    margin: 0; padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: transparent;
+    overflow-y: auto;  
+    display: flex; justify-content: center; align-items: center;
+  }
+html { background: #000080; }
+ #regForm h1, 
+#regForm p, 
+#regForm label, 
+#regForm strong { 
+  color: #ffffff !important; 
+}
+
+#regForm p { 
+  opacity: 0.9; 
+}
+
+#thankYou div {
+  background: rgba(253, 224, 71, 0.15) !important;
+  color: #ffffff !important;
+  border: 2px solid #FDE047 !important;
+  box-shadow: 0 0 15px rgba(253, 224, 71, 0.2);
+}
+
+  /* Form Card */
+  #regForm { 
+    background: rgba(255, 255, 255, 0.05); 
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 30px;
+    padding: 40px; 
+    width: 90%; 
+    max-width: 500px; 
+    position: relative; 
+    min-height: 450px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #regForm:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(253, 224, 71, 0.4);
+  }
+
+  h1 { text-align: center; color: var(--primary); margin-top: 0; }
+
+  .logo { 
+    display: block; margin: 0 auto 25px; max-height: 80px; max-width: 80%; width: auto; 
+    object-fit: contain; border-radius: 15px; cursor: grab; user-select: none; -webkit-user-drag: none;
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), filter 0.3s ease;
+  }
+
+  .logo.is-pulling { cursor: grabbing; filter: opacity(0.6) blur(2px); background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); }
+
+  input { padding: 15px; width: 100%; font-size: 17px; font-family: 'Phantom Sans'; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; transition: 0.3s; }
+  input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 8px rgba(45, 127, 249, 0.2); }
+  input.invalid { border-color: #ff4d4d; background-color: #fff8f8; }
+  .error-msg { color: #ff4d4d; font-size: 13px; display: none; margin-bottom: 15px; margin-top: -5px; font-weight: bold; }
+
+  .btn-group { display: flex; justify-content: space-between; margin-top: auto; padding-top: 20px; gap: 15px; }
+
+  button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: 'Phantom Sans';
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1.2);
+  text-transform: uppercase;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #FDE047;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(25px);
+  border-color: rgba(253, 224, 71, 0.8);
+  transition: all 0.1s ease;
+}
+
+.home-btn {
+  position: absolute; 
+  top: 15px; 
+  left: 15px; 
+  width: 45px; 
+  height: 45px;
+  border-radius: 50% !important; 
+  padding: 0 !important; 
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+}
+  .home-btn svg { width: 22px; height: 22px; fill: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+
+  .tab { display: none; animation: fadeEffect 0.6s; flex-grow: 1; }
+  @keyframes fadeEffect { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .iti { width: 100%; margin-bottom: 10px; }
+</style>
+
+  <script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+</head>
+<body>
+<div id="loader-wrapper">
+    <div class="loader-content">
+        <img src="logo.svg" class="loader-logo" alt="Logo">
+        
+        <div class="frame">
+          <svg viewBox="0 0 100 100" fill="none" id="loader-svg">
+            <g id="loader-group" color="#FDE047">
+              <path id="loader-path" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" opacity="0.1"></path>
+            </g>
+          </svg>
+        </div>
+        
+      
+    </div>
+</div>
+
+
+
+  <div id="resumeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,128,0.6); backdrop-filter:blur(10px); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(20px); padding:40px; border-radius:30px; text-align:center; color:white; max-width:400px; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+    <h2 style="margin-top:0;">Resume Signup?</h2>
+    <p>We found an unfinished form. Would you like to pick up where you left off?</p>
+    <div style="display:flex; gap:15px; margin-top:25px;">
+      <button type="button" onclick="loadProgress()" style="flex:1; background:rgba(255,255,255,0.2); border-color:#FDE047;">Resume</button>
+      <button type="button" onclick="clearProgress()" style="flex:1; opacity:0.7;">Start New</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+  <div id="canvas-container"></div>
+  <canvas id="three-canvas"></canvas>
+  
+<form id="regForm" action="">
+  <button type="button" class="home-btn" onclick="window.location.href='https://curahack.club/'">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+  </button>
+
+  <img src="logo.svg" alt="Club Logo" class="logo" title="Double click to go home">
+
+  <div class="tab">
+    <h1>Welcome!</h1>
+    <p style="text-align:center;">Let's get you signed up.</p>
+    <input type="text" placeholder="First Name" name="fname" oninput="this.className = ''">
+    <input type="text" placeholder="Last Name" name="lname" oninput="this.className = ''">
+  </div>
+
+  <div class="tab">
+    <h1>Contact Info</h1>
+    <input type="tel" id="phone" name="phone_raw">
+    <span class="error-msg" id="phone-error">Please enter a valid phone number.</span>
+    <input type="email" placeholder="Email Address" name="email" oninput="this.className = ''">
+    <span class="error-msg" id="email-error">Invalid email format</span>
+    <label style="display:block; margin-top: 15px; margin-bottom: 5px; color: #666;">Date of Birth (13-18 only)</label>
+    <input type="date" name="dob" id="dob">
+    <span class="error-msg" id="age-error">Aged 13–18 only.</span>
+  </div>
+
+
+
+
+<div class="tab">
+  <h1>Safety & Rules</h1>
+  <p style="text-align:center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">Please confirm the following to join:</p>
+  
+  <div style="display:flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
+    <input type="checkbox" id="rule_check" name="rule_agree" style="width: 25px; height: 25px; margin-top: 5px; cursor: pointer;">
+    <label for="rule_check" style="font-size: 0.85rem; line-height: 1.4;">
+      I agree to the 
+      <a href="https://curahack.club/rules.html" target="_blank" style="color: #FDE047; font-weight: bold; text-decoration: underline;">Club Rules</a> 
+      and will maintain a safe environment for all members.
+    </label>
+  </div>
+
+  <div style="display:flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
+    <input type="checkbox" id="curacao_check" name="is_local" style="width: 25px; height: 25px; margin-top: 5px; cursor: pointer;">
+    <label for="curacao_check" style="font-size: 0.85rem; line-height: 1.4;">I currently live in <span style="color: #FDE047; font-weight: bold;">Curaçao</span> and can attend physical meetings.</label>
+  </div>
+  <span class="error-msg" id="check-error" style="color: #ff4d4d; font-size: 0.8rem; display: none; text-align: center; margin-top: 10px;">Both boxes must be checked to continue.</span>
+</div>
+
+
+
+
+  <div class="tab">
+    <h1>Emergency Contact 1</h1>
+    <input type="text" placeholder="Guardian First Name" name="ec1_fname">
+    <input type="text" placeholder="Guardian Last Name" name="ec1_lname">
+    <input type="tel" id="ec1_phone" name="ec1_phone_raw">
+    <input type="email" placeholder="Guardian Email" name="ec1_email">
+  </div>
+
+  <div class="tab">
+    <h1>Emergency Contact 2</h1>
+    <input type="text" placeholder="First Name (Optional)" name="ec2_fname">
+    <input type="text" placeholder="Last Name (Optional)" name="ec2_lname">
+    <input type="tel" id="ec2_phone" name="ec2_phone_raw">
+    <input type="email" placeholder="Email (Optional)" name="ec2_email">
+  </div>
+
+<div class="tab" id="thankYou" style="text-align: center;">
+    <h1 class="text-3xl font-black italic uppercase text-white mb-1">All set!</h1>
+    <p class="opacity-60 font-bold uppercase tracking-widest text-[10px] mb-6">We'll be in touch soon!</p>
+    
+    <div style="background: rgba(253, 224, 71, 0.1); padding: 30px 20px; border-radius: 25px; border: 1px solid rgba(253, 224, 71, 0.4); max-width: 380px; margin: 0 auto;">
+        
+        <strong style="color: #FDE047; text-transform: uppercase; letter-spacing: 2px; font-size: 1.1rem; display: block;">⚠️ Important</strong>
+        <span style="color: white; font-weight: 800; font-size: 1.2rem; display: block; margin: 10px 0;">Bring your ID to the first meeting.</span>
+        <span style="letter-spacing: 3px; font-weight: 900; opacity: 0.5; font-size: 0.75rem; display: block; margin-bottom: 20px;">SOMETHING IS COOKING! 🍳</span>
+
+        <hr style="border: 0; border-top: 1px solid rgba(253, 224, 71, 0.3); margin: 20px 0;">
+
+        <a href="https://whatsapp.curahack.club/" 
+           target="_blank"
+           style="display: inline-flex; align-items: center; gap: 10px; padding: 14px 32px; background: #25D366; color: white; border-radius: 50px; text-decoration: none; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3); transition: transform 0.2s ease;">
+           <svg style="width: 20px; height: 20px; fill: currentColor;" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.438 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+           JOIN COMMUNITY
+        </a>
+        <p style="margin-top: 15px; font-size: 0.75rem; opacity: 0.8; font-weight: 800; text-transform: uppercase; color: #FDE047; letter-spacing: 1px;">Must join to get updates.</p>
+        
+    </div>
+</div>
+
+  <div class="btn-group" id="btnDiv">
+    <button type="button" id="prevBtn" onclick="nextPrev(-1)">Back</button>
+    <button type="button" id="nextBtn" onclick="nextPrev(1)">Next Step</button>
+  </div>
+</form>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+<script>
+let scene, camera, renderer, shape, stars;
+
+function init3D() {
+  const canvas = document.getElementById('three-canvas');
+  if (!canvas) return;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+
+  const geometry = new THREE.TorusGeometry(18, 5, 16, 100); 
+  const material = new THREE.MeshNormalMaterial({ 
+    wireframe: true, 
+    transparent: true, 
+    opacity: 0.4 
+  });
+  
+  shape = new THREE.Mesh(geometry, material);
+  scene.add(shape);
+
+
+  const starCount = 1200;
+  const starGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount * 3; i++) { 
+    positions[i] = (Math.random() - 0.5) * 350; 
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xFDE047, size: 0.5 }));
+  scene.add(stars);
+
+  camera.position.z = 60;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    
+
+    if (shape) {
+      shape.rotation.x += 0.003; 
+      shape.rotation.y += 0.005; 
+      shape.rotation.z += 0.002;
+    }
+    
+    if (stars) {
+      stars.rotation.y += 0.0002;
+    }
+    
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+
+
+
+let currentTab = 0;
+window.onload = () => {
+  init3D();
+  checkProgress();
+  showTab(currentTab);
+  
+};
+
+const phoneOpts = { utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js", separateDialCode: true };
+const phoneInput = window.intlTelInput(document.querySelector("#phone"), phoneOpts);
+const ec1PhoneInput = window.intlTelInput(document.querySelector("#ec1_phone"), phoneOpts);
+const ec2PhoneInput = window.intlTelInput(document.querySelector("#ec2_phone"), phoneOpts);
+
+function showTab(n) {
+  let x = document.getElementsByClassName("tab");
+  x[n].style.display = "flex";
+  x[n].style.flexDirection = "column";
+  document.getElementById("prevBtn").style.visibility = (n == 0) ? "hidden" : "visible";
+  if (n == (x.length - 2)) document.getElementById("nextBtn").innerHTML = "Submit Signup";
+  else document.getElementById("nextBtn").innerHTML = "Next Step";
+  if (n == x.length - 1) document.getElementById("btnDiv").style.display = "none";
+}
+
+function nextPrev(n) {
+  let x = document.getElementsByClassName("tab");
+  if (n == 1 && !validateForm()) return false;
+  x[currentTab].style.display = "none";
+  currentTab = currentTab + n;
+  if (currentTab >= x.length - 1) submitForm();
+  showTab(currentTab);
+}
+
+function initHaptics() {
+    const btns = document.querySelectorAll('button');
+    btns.forEach(btn => {
+        const press = () => btn.style.setProperty('--press', '1');
+        const release = () => btn.style.setProperty('--press', '0');
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('touchstart', press, {passive: true});
+        btn.addEventListener('touchend', release);
+    });
+}
+initHaptics();
+
+function validateForm() {
+  let valid = true;
+  let x = document.getElementsByClassName("tab");
+  let inputs = x[currentTab].querySelectorAll("input");
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  
+  for (let i = 0; i < inputs.length; i++) {
+    if (inputs[i].type === "checkbox") continue;
+    
+    
+    if (inputs[i].name.startsWith("ec2_")) continue;
+
+    if (inputs[i].value.trim() === "") {
+      inputs[i].classList.add("invalid");
+      valid = false;
+    } else {
+      inputs[i].classList.remove("invalid");
+    }
+  }
+
+  
+  const studentEmail = x[currentTab].querySelector('input[name="email"]');
+  if (studentEmail) {
+    const isEmailValid = emailRegex.test(studentEmail.value);
+    const isPhoneValid = phoneInput.isValidNumber();
+    const dobValue = document.getElementById("dob").value;
+    let isAgeValid = false;
+    if (dobValue) {
+      const birthDate = new Date(dobValue);
+      const age = Math.floor((new Date() - birthDate) / 31557600000);
+      isAgeValid = (age >= 13 && age <= 18);
+    }
+    document.getElementById("email-error").style.display = isEmailValid ? "none" : "block";
+    document.getElementById("phone-error").style.display = isPhoneValid ? "none" : "block";
+    document.getElementById("age-error").style.display = isAgeValid ? "none" : "block";
+    if (!isEmailValid || !isPhoneValid || !isAgeValid) valid = false;
+  }
+  
+  
+  const ec1Email = x[currentTab].querySelector('input[name="ec1_email"]');
+  if (ec1Email) {
+    const isPhoneValid = ec1PhoneInput.isValidNumber();
+    const isEmailValid = emailRegex.test(ec1Email.value);
+    
+    if (!isPhoneValid) {
+      document.querySelector("#ec1_phone").classList.add("invalid");
+      valid = false;
+    }
+    if (!isEmailValid) {
+      ec1Email.classList.add("invalid");
+      valid = false;
+    }
+  }
+
+  
+  const ec2Email = x[currentTab].querySelector('input[name="ec2_email"]');
+  if (ec2Email && ec2Email.value.trim() !== "") {
+    if (!emailRegex.test(ec2Email.value)) {
+      ec2Email.classList.add("invalid");
+      valid = false;
+    }
+    if (document.querySelector("#ec2_phone").value.trim() !== "" && !ec2PhoneInput.isValidNumber()) {
+      document.querySelector("#ec2_phone").classList.add("invalid");
+      valid = false;
+    }
+  }
+
+  
+  const ruleCheck = document.getElementById("rule_check");
+  const localCheck = document.getElementById("curacao_check");
+  if (ruleCheck && x[currentTab].contains(ruleCheck)) {
+    const checkError = document.getElementById("check-error");
+    if (!ruleCheck.checked || !localCheck.checked) {
+      checkError.style.display = "block";
+      valid = false;
+    } else {
+      checkError.style.display = "none";
+    }
+  }
+
+  return valid; 
+}
+
+
+
+
+const logo = document.querySelector('.logo');
+let isLogoDragging = false;
+let startX, startY;
+
+logo.addEventListener('dblclick', () => { window.location.href = 'https://curahack.club/'; });
+
+const startDrag = (e) => {
+  isLogoDragging = true;
+  logo.classList.add('is-pulling');
+  const pos = e.touches ? e.touches[0] : e;
+  startX = pos.clientX; startY = pos.clientY;
+  const startDrag = (e) => {
+  e.stopPropagation(); 
+  isLogoDragging = true;
+  
+};
+};
+
+const doDrag = (e) => {
+  if (!isLogoDragging) return;
+  const pos = e.touches ? e.touches[0] : e;
+  const moveX = (pos.clientX - startX) / 3;
+  const moveY = (pos.clientY - startY) / 3;
+  logo.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.1)`;
+};
+
+const stopDrag = () => {
+  isLogoDragging = false;
+  logo.classList.remove('is-pulling');
+  logo.style.transform = `translate(0px, 0px) scale(1)`;
+};
+
+logo.addEventListener('mousedown', startDrag);
+window.addEventListener('mousemove', doDrag);
+window.addEventListener('mouseup', stopDrag);
+logo.addEventListener('touchstart', startDrag, {passive: true});
+window.addEventListener('touchmove', doDrag, {passive: false});
+window.addEventListener('touchend', stopDrag);
+
+
+
+
+document.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(75); 
+    }
+  });
+});
+
+const STORAGE_KEY = 'join_form_progress';
+document.getElementById('regForm').addEventListener('input', () => {
+  const data = Object.fromEntries(new FormData(document.getElementById('regForm')));
+  data.currentTab = currentTab;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+});
+
+function loadProgress() {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const form = document.getElementById('regForm');
+    
+    
+    Object.keys(data).forEach(key => {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input) input.value = data[key];
+    });
+
+    
+    let tabs = document.getElementsByClassName("tab");
+    for (let i = 0; i < tabs.length; i++) {
+        tabs[i].style.display = "none";
+    }
+
+    
+    currentTab = parseInt(data.currentTab) || 0;
+    document.getElementById('resumeModal').style.display = 'none';
+    
+    
+    tabs[currentTab].style.display = "block";
+    showTab(currentTab); 
+}
+
+
+
+async function submitForm() {
+  const formData = new FormData(document.getElementById("regForm"));
+  const data = Object.fromEntries(formData.entries());
+  
+  
+  delete data.rule_agree;
+  delete data.is_local;
+  delete data.currentTab;
+
+ 
+  data.phone_final = phoneInput.getNumber();
+  data.ec1_phone_final = ec1PhoneInput.getNumber();
+  data.ec2_phone_final = ec2PhoneInput.getNumber();
+
+  const SUPABASE_URL = ''; // Replace with your Supabase URL 
+  const SUPABASE_KEY = ''; // Replace with your Supabase API Key
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/signups`, { // Replace 'signups' with your table name
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log("Welcome to Hack Club Curaçao!"); 
+      
+    } else {
+      const error = await response.json();
+      console.error("Supabase Error:", error.message);
+      alert("Submission failed: " + error.message); 
+    }
+  } catch (e) {
+    console.error("Connection failed:", e);
+  }
+}
+
+  
+function clearProgress() {
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('resumeModal').style.display = 'none';
+}
+
+
+function checkProgress() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        const data = JSON.parse(saved);
+        
+        if (data.fname || data.lname) {
+            document.getElementById('resumeModal').style.display = 'flex';
+        }
+    }
+}
+
+
+function setupHaptics() {
+    
+    const interactiveElements = document.querySelectorAll('button, a, .btn-glass, .event-card, #logo-easter-egg');
+
+    interactiveElements.forEach(el => {
+        el.addEventListener('click', () => {
+            if (navigator.vibrate) {
+                
+                navigator.vibrate(40);
+            }
+        });
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupHaptics);
+} else {
+    setupHaptics();
+}
+
+
+const heartConfig = {
+    particleCount: 104,
+    trailSpan: 0.18,
+    durationMs: 8400,
+    pulseDurationMs: 5600,
+    strokeWidth: 3.9,
+    heartWaveB: 6.4,
+    heartWaveRoot: 3.3,
+    heartWaveAmp: 0.9,
+    heartWaveScaleX: 23.2,
+    heartWaveScaleY: 24.5,
+    point(progress, detailScale) {
+        const xLimit = Math.sqrt(this.heartWaveRoot);
+        const x = -xLimit + progress * xLimit * 2;
+        const safeRoot = Math.max(0, this.heartWaveRoot - x * x);
+        const wave = this.heartWaveAmp * Math.sqrt(safeRoot) * Math.sin(this.heartWaveB * Math.PI * x);
+        const curve = Math.pow(Math.abs(x), 2 / 3);
+        const y = curve + wave;
+        const scaleY = this.heartWaveScaleY + detailScale * 1.5;
+        return {
+            x: 50 + x * this.heartWaveScaleX,
+            y: 18 + (1.75 - y) * scaleY,
+        };
+    }
+};
+
+function initHeartLoader() {
+    const group = document.querySelector('#loader-group');
+    const path = document.querySelector('#loader-path');
+    path.setAttribute('stroke-width', String(heartConfig.strokeWidth));
+
+    const particles = Array.from({ length: heartConfig.particleCount }, () => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('fill', 'currentColor');
+        group.appendChild(circle);
+        return circle;
+    });
+
+    function render(now) {
+        if (document.getElementById('loader-wrapper').classList.contains('loader-hidden')) return;
+
+        const progress = (now % heartConfig.durationMs) / heartConfig.durationMs;
+        const pulseProgress = (now % heartConfig.pulseDurationMs) / heartConfig.pulseDurationMs;
+        const detailScale = 0.52 + ((Math.sin(pulseProgress * Math.PI * 2 + 0.55) + 1) / 2) * 0.48;
+
+        
+        let d = "";
+        for (let i = 0; i <= 200; i++) {
+            const p = heartConfig.point(i / 200, detailScale);
+            d += `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+        }
+        path.setAttribute('d', d);
+
+        
+        particles.forEach((node, index) => {
+            const tailOffset = index / (heartConfig.particleCount - 1);
+            const pProg = (((progress - tailOffset * heartConfig.trailSpan) % 1) + 1) % 1;
+            const p = heartConfig.point(pProg, detailScale);
+            const fade = Math.pow(1 - tailOffset, 0.56);
+            
+            node.setAttribute('cx', p.x.toFixed(2));
+            node.setAttribute('cy', p.y.toFixed(2));
+            node.setAttribute('r', (0.9 + fade * 2.7).toFixed(2));
+            node.setAttribute('opacity', (0.04 + fade * 0.96).toFixed(3));
+        });
+
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+}
+
+initHeartLoader();
+
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        document.getElementById('loader-wrapper').classList.add('loader-hidden');
+    }, 2500);
+});
+
+
+
+</script>
+</body>
+</html>
